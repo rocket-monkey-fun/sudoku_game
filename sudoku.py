@@ -42,10 +42,12 @@ def callback_new_game(sender, app_data):
     random_numbers_first_row = rd.sample(numbers, k = 9)
     sudoku.append(random_numbers_first_row)
 
+    thread1.daemon = True
     thread1.start()
+    thread2.daemon = True
     thread2.start()
+    thread3.daemon = True
     thread3.start()
-
 
 def callback_new_game_generate():
     while len(sudoku) != 9:
@@ -152,11 +154,14 @@ def callback_new_game_generate():
     dpg.configure_item("start_game", show = True)
     new_text.pop()
     new_text.append(False)
+    create_easy_board()
     
 def callback_change_funny_text():
     while new_text[0] == True:
         dpg.set_value("funny_text", rd.choice(funny_text.text_snippets))
         time.sleep(15)
+    print("close thread 2")
+    return
 
 def callback_change_funny_text_2():
     time.sleep(30)
@@ -168,6 +173,8 @@ def callback_change_funny_text_2():
         time.sleep(15)
     if new_text[0] == True:
         dpg.configure_item("funny_4", show = True)
+    print("close thread 3")
+    return
 
 def callback_set_1(sender, app_data):
     dpg.configure_item(sender, texture_tag = app_data)
@@ -177,25 +184,63 @@ def callback_start_game():
     dpg.configure_item("game_screen", show = True)
     dpg.set_primary_window("game_screen", True)
 
+    thread4.daemon = True
+    thread4.start()
+
+def callback_start_timer():
+    start_time = time.time()
+
+    while 5 > 4:
+        mid_time = time.time()
+        elapsed_time = int(round(abs(mid_time - start_time), 0))
+        if elapsed_time <= 9:
+            dpg.set_value("timer", f"00:0{elapsed_time}")
+        if elapsed_time in range(10, 61):
+            dpg.set_value("timer", f"00:{elapsed_time}")
+
+def create_easy_board():
+    easy_mode = rd.sample(range(0, 81), k = 38)
+    print(easy_mode)
+    flat_sudoku = sum(sudoku, [])
+    print(flat_sudoku)
+    for i in easy_mode: 
+        flat_sudoku.pop(i)
+        flat_sudoku.insert(i, "0")
+    print("\n")
+
+
+
+    test = []
+
+    for row in range(1, 10):
+        for column in range(1, 10):
+            number_value = 9 * (row - 1) + (column - 1)
+            test.append(flat_sudoku[number_value])
+            dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{flat_sudoku[number_value]}")
+        print(test)
+        test.clear()
+
+
 
 thread1 = threading.Thread(target = callback_new_game_generate)
 thread2 = threading.Thread(target = callback_change_funny_text)
 thread3 = threading.Thread(target = callback_change_funny_text_2)
+thread4 = threading.Thread(target = callback_start_timer)
 
 ##############################################################################################################################################################################################
 
 dpg.create_context()
 
-width_0, height_0, channels_0, data_0 = dpg.load_image("resources\image_0.png")
-width_1, height_1, channels_1, data_1 = dpg.load_image("resources\image_1.png")
-width_2, height_2, channels_2, data_2 = dpg.load_image("resources\image_2.png")
-width_3, height_3, channels_3, data_3 = dpg.load_image("resources\image_3.png")
-width_4, height_4, channels_4, data_4 = dpg.load_image("resources\image_4.png")
-width_5, height_5, channels_5, data_5 = dpg.load_image("resources\image_5.png")
-width_6, height_6, channels_6, data_6 = dpg.load_image("resources\image_6.png")
-width_7, height_7, channels_7, data_7 = dpg.load_image("resources\image_7.png")
-width_8, height_8, channels_8, data_8 = dpg.load_image("resources\image_8.png")
-width_9, height_9, channels_9, data_9 = dpg.load_image("resources\image_9.png")
+width_0, height_0, channels_0, data_0 = dpg.load_image("resources/image_0.png", gamma = 0)
+width_1, height_1, channels_1, data_1 = dpg.load_image("resources/image_1.png", gamma = 0)
+width_2, height_2, channels_2, data_2 = dpg.load_image("resources/image_2.png", gamma = 0)
+width_3, height_3, channels_3, data_3 = dpg.load_image("resources/image_3.png", gamma = 0)
+width_4, height_4, channels_4, data_4 = dpg.load_image("resources/image_4.png", gamma = 0)
+width_5, height_5, channels_5, data_5 = dpg.load_image("resources/image_5.png", gamma = 0)
+width_6, height_6, channels_6, data_6 = dpg.load_image("resources/image_6.png", gamma = 0)
+width_7, height_7, channels_7, data_7 = dpg.load_image("resources/image_7.png", gamma = 0)
+width_8, height_8, channels_8, data_8 = dpg.load_image("resources/image_8.png", gamma = 0)
+width_9, height_9, channels_9, data_9 = dpg.load_image("resources/image_9.png", gamma = 0)
 
 with dpg.texture_registry():
     dpg.add_static_texture(width = width_0, height = height_0, default_value = data_0, tag = "image_0")
@@ -209,9 +254,11 @@ with dpg.texture_registry():
     dpg.add_static_texture(width = width_8, height = height_8, default_value = data_8, tag = "image_8")
     dpg.add_static_texture(width = width_9, height = height_9, default_value = data_9, tag = "image_9")
 
-dpg.create_viewport(title = 'Sudoku', width = 600, height = 600, small_icon = "resources\icon.ico", large_icon = "resources\icon.ico", resizable = False)
+dpg.create_viewport(title = 'Sudoku', width = 600, height = 600, small_icon = "resources/icon.ico", large_icon = "resources/icon.ico", resizable = False)
 
 with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_screen"):
+    with dpg.tree_node(label = "Difficulty:", default_open = True, bullet = True, leaf = True):
+        dpg.add_radio_button(("Easy", "Medium", "Evil"), horizontal = True, default_value = "Easy")
 
     with dpg.theme(tag = "button_theme"):
         with dpg.theme_component(dpg.mvButton):
@@ -232,7 +279,7 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
     dpg.add_text("Like really, really, really slow...", show = False, tag = "funny_4")
 
 
-    dpg.add_button(label = "Start game", callback = callback_start_game, show = False, tag = "start_game")
+    dpg.add_button(label = "     Start game     ", callback = callback_start_game, show = False, tag = "start_game")
     dpg.bind_item_theme(dpg.last_item(), "button_theme")
 
 with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "game_screen"):
@@ -271,6 +318,9 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     dpg.add_text("Drag and drop the desired number from the right hand side to the target cell.", bullet = True)
     dpg.add_text("Use the empty block to reset a value.", bullet = True)
     dpg.add_text("Have fun!", bullet = True)
+
+    dpg.add_text("00:00", tag = "timer")
+
 
 
 

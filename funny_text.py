@@ -30,6 +30,6 @@ text_snippets = [
     "Never gonna let you down...",
     "I'll be back!",
     "To infinity and beyond!",
-    "Eating spagetti with a spoon.",
+    "Eating spaghsetti with a spoon.",
     "Shaking hands with Bigfoot.",
 ]
