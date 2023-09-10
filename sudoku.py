@@ -200,11 +200,11 @@ def callback_set_to_number(sender, app_data):
         print ("fudge")
         print(f"button_{row}_{column}")
         dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{new_number}_c")
+        number_of_mistakes.append(0)
+        dpg.set_value("mistakes", len(number_of_mistakes))
         time.sleep(2)
         dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_0_a")
-        number_of_mistakes.append(0)
-        dpg.set_value("mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
-    
+        
     if old_number == new_number:
         position = (((row - 1) * 9) + column) - 1
         easy_mode.remove(position)
@@ -401,7 +401,7 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
                     with dpg.drag_payload(parent = dpg.last_item(), drag_data = f"image_{row}_b", payload_type = "strings"):
                         dpg.add_text(f"{row}")
 
-    dpg.add_image_button("image_99", width = 30, height = 30, indent = 450)
+    dpg.add_image_button("image_99", width = 30, height = 30, indent = 450, show = False)
     with dpg.drag_payload(parent = dpg.last_item(), drag_data = "image_0_a", payload_type = "strings"):
         dpg.add_text("reset")
 
@@ -420,13 +420,14 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
 
         dpg.draw_rectangle((0, 0), (407, 357), color = col.retro_red, thickness = 2)
 
-    dpg.add_text("Instructions:", bullet = True)
-    dpg.add_text("Drag and drop the desired number from the right hand side to the target cell.", bullet = True)
-    dpg.add_text("Use the empty block to reset a value.", bullet = True)
-    dpg.add_text("Have fun!", bullet = True)
+    with dpg.tree_node(label = "Instructions:", default_open = True, bullet = True, leaf = True):
+        dpg.add_text(text.instructions_gamemode_continuous)
 
-    dpg.add_text("Time: 00:00", tag = "timer")
-    dpg.add_text("Number of mistakes: 0", tag = "mistakes")
+    with dpg.tree_node(label = "Timer:", default_open = True, bullet = True, leaf = True):
+        dpg.add_text("00:00", tag = "timer")
+
+    with dpg.tree_node(label = "Mistakes:", default_open = True, bullet = True, leaf = True):
+        dpg.add_text("0", tag = "mistakes")
 
     with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, tag = "finish_popup"):
         dpg.add_text("Congratulations, here are your stats:")
