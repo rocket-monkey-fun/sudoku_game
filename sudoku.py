@@ -12,6 +12,7 @@ start_generating_map_sound = pygame.mixer.Sound("resources/start_gereating_map.w
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 stage = []
 sudoku = []
+easy_mode = []
 new_text = [True]
 number_of_mistakes = []
 
@@ -203,10 +204,17 @@ def callback_set_to_number(sender, app_data):
         dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_0_a")
         number_of_mistakes.append(0)
         dpg.set_value("mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
+    
+    if old_number == new_number:
+        position = (((row - 1) * 9) + column) - 1
+        easy_mode.remove(position)
 
-    print(row_column)
-    print(new_number)
-    print(old_number)
+        if len(easy_mode) == 0:
+            print("win")
+            dpg.configure_item("finish_popup", show = True)
+            dpg.set_value("stat_mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
+
+    print(len(easy_mode))
 
 def callback_start_game():
     dpg.configure_item("welcome_screen", show = False)
@@ -228,7 +236,9 @@ def callback_start_timer():
             dpg.set_value("timer", f"00:{elapsed_time}")
 
 def create_easy_board():
-    easy_mode = rd.sample(range(0, 81), k = 38)
+    easy_mode_values = rd.sample(range(0, 81), k = 43)
+    for i in range(0, 43):
+        easy_mode.append(easy_mode_values[i])
     print(easy_mode)
     flat_sudoku = sum(sudoku, [])
     print(flat_sudoku)
@@ -418,6 +428,13 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     dpg.add_text("Time: 00:00", tag = "timer")
     dpg.add_text("Number of mistakes: 0", tag = "mistakes")
 
+    with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, tag = "finish_popup"):
+        dpg.add_text("Congratulations, here are your stats:")
+        dpg.add_separator()
+        dpg.add_text("Your time:")
+        dpg.add_text(f"Number of mistakes: 0", tag = "stat_mistakes")
+        with dpg.group(horizontal=True):
+            dpg.add_button(label = "OK", width = 75, callback = lambda: dpg.configure_item("finish_popup", show = False))
 
 
 
