@@ -7,13 +7,17 @@ import threading
 import colors as col
 
 pygame.init()
-start_generating_map_sound = pygame.mixer.Sound("resources/start_gereating_map.wav")
+start_generating_map_sound = pygame.mixer.Sound("resources/start_generating_map.wav")
+correct = pygame.mixer.Sound("resources/correct.wav")
+incorrect = pygame.mixer.Sound("resources/incorrect.wav")
+win_game = pygame.mixer.Sound("resources/win_game.wav")
 
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 stage = []
 sudoku = []
 easy_mode = []
 new_text = [True]
+timer_on = [True]
 number_of_mistakes = []
 
 def iteration_1(range_i, range_j, range_k, random_numbers):
@@ -189,6 +193,7 @@ def callback_change_funny_text_2():
     return
 
 def callback_set_to_number(sender, app_data):
+    sound = get_value_sound()
     dpg.configure_item(sender, texture_tag = app_data)
     row_column = "".join(number for number in sender if number.isdecimal())
     row = int(row_column[0])
@@ -202,38 +207,56 @@ def callback_set_to_number(sender, app_data):
         dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{new_number}_c")
         number_of_mistakes.append(0)
         dpg.set_value("mistakes", len(number_of_mistakes))
-        time.sleep(2)
+        if sound == "On":
+            incorrect.play()
+        time.sleep(1.5)
         dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_0_a")
         
     if old_number == new_number:
         position = (((row - 1) * 9) + column) - 1
         easy_mode.remove(position)
+        if sound == "On":
+            correct.play()
 
         if len(easy_mode) == 0:
             print("win")
             dpg.configure_item("finish_popup", show = True)
+            elapsed_time = dpg.get_value("timer")
+            dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
             dpg.set_value("stat_mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
+            timer_on.pop()
+            timer_on.append(False)
+            if sound == "On":
+                win_game.play()
 
     print(len(easy_mode))
 
 def callback_start_game():
+    sound = get_value_sound()
     dpg.configure_item("welcome_screen", show = False)
     dpg.configure_item("game_screen", show = True)
     dpg.set_primary_window("game_screen", True)
+    if sound == "On":
+        start_generating_map_sound.stop()
 
-    #thread4.daemon = True
-    #thread4.start()
+    thread4.daemon = True
+    thread4.start()
 
 def callback_start_timer():
     start_time = time.time()
 
-    while 5 > 4:
-        mid_time = time.time()
-        elapsed_time = int(round(abs(mid_time - start_time), 0))
-        if elapsed_time <= 9:
-            dpg.set_value("timer", f"00:0{elapsed_time}")
-        if elapsed_time in range(10, 61):
-            dpg.set_value("timer", f"00:{elapsed_time}")
+    try:
+        while timer_on[0] == True:
+            mid_time = time.time()
+            elapsed_time = int(abs(mid_time - start_time))
+            if elapsed_time < 60:
+                dpg.set_value("timer", elapsed_time)
+            if elapsed_time >= 60:
+                minutes = elapsed_time // 60
+                seconds = elapsed_time % 60
+                dpg.set_value("timer", f"{minutes}:{seconds}")
+    except: Exception
+    return
 
 def create_easy_board():
     easy_mode_values = rd.sample(range(0, 81), k = 43)
@@ -261,12 +284,14 @@ def create_easy_board():
 
 def get_value_sound():
     sound = dpg.get_value("sound")
-    return sound
+    return sound    
 
 thread1 = threading.Thread(target = callback_new_game_generate)
 thread2 = threading.Thread(target = callback_change_funny_text)
 thread3 = threading.Thread(target = callback_change_funny_text_2)
-#thread4 = threading.Thread(target = callback_start_timer)
+thread4 = threading.Thread(target = callback_start_timer)
+
+
 
 ##############################################################################################################################################################################################
 
@@ -423,8 +448,8 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     with dpg.tree_node(label = "Instructions:", default_open = True, bullet = True, leaf = True):
         dpg.add_text(text.instructions_gamemode_continuous)
 
-    with dpg.tree_node(label = "Timer:", default_open = True, bullet = True, leaf = True):
-        dpg.add_text("00:00", tag = "timer")
+    with dpg.tree_node(label = "Time:", default_open = True, bullet = True, leaf = True):
+        dpg.add_text("0", tag = "timer")
 
     with dpg.tree_node(label = "Mistakes:", default_open = True, bullet = True, leaf = True):
         dpg.add_text("0", tag = "mistakes")
@@ -432,7 +457,7 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, tag = "finish_popup"):
         dpg.add_text("Congratulations, here are your stats:")
         dpg.add_separator()
-        dpg.add_text("Your time:")
+        dpg.add_text("Your time is:", tag = "stat_time")
         dpg.add_text(f"Number of mistakes: 0", tag = "stat_mistakes")
         with dpg.group(horizontal=True):
             dpg.add_button(label = "OK", width = 75, callback = lambda: dpg.configure_item("finish_popup", show = False))
