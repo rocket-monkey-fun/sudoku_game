@@ -38,4 +38,4 @@ gamemode_continuous = "Check continuously: In this mode each move is checked aft
 
 gamemode_finish = "Check on finish: In this mode the result is shown after the last move is done."
 
-instructions_gamemode_continuous = "- Drag and drop the desired number from the right hand side to the target cell.\n- If the value is correct, you can continue.\n- If it turns red, you have entered an incorrect value.\n- Have fun!"
+instructions_gamemode_continuous = "- The green numbers serve as pen marks and are checked.\n- If the value is correct, you can continue.\n- If it turns red, you have entered an incorrect value.\n- The brown numbers serve as pencil marks and are not checked.\n- Have fun!"
