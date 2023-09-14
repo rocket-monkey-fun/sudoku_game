@@ -19,6 +19,8 @@ easy_mode = []
 new_text = [True]
 timer_on = [True]
 number_of_mistakes = []
+start_creating_maps = [False]
+new_map = []
 
 def iteration_1(range_i, range_j, range_k, random_numbers):
     for i in range(range_i[0], range_i[1]):
@@ -43,6 +45,12 @@ def iteration_2(range_i, range_j, random_numbers):
                 stage.clear()
                 return False    
 
+def callback_start_creating_maps():
+    start_creating_maps.pop()
+    start_creating_maps.append(True)
+
+    callback_new_game_generate()
+
 def callback_new_game(sender, app_data):
     sound = get_value_sound()
 
@@ -55,8 +63,7 @@ def callback_new_game(sender, app_data):
 
     sudoku.clear()
 
-    random_numbers_first_row = rd.sample(numbers, k = 9)
-    sudoku.append(random_numbers_first_row)
+
 
     thread1.daemon = True
     thread1.start()
@@ -66,6 +73,9 @@ def callback_new_game(sender, app_data):
     thread3.start()
 
 def callback_new_game_generate():
+    random_numbers_first_row = rd.sample(numbers, k = 9)
+    sudoku.append(random_numbers_first_row)
+
     while len(sudoku) != 9:
         random_numbers = rd.sample(numbers, k = 9)
 
@@ -105,22 +115,23 @@ def callback_new_game_generate():
                 break
 
         while len(sudoku) == 4:
-            if iteration_1((0, 3),(3, 4), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 3), random_numbers) == False:
+            if iteration_1((0, 3), (3, 4), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 3), random_numbers) == False:
                 break
-            if iteration_1((3, 6),(3, 4), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 3), random_numbers) == False:
+            if iteration_1((3, 6), (3, 4), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 3), random_numbers) == False:
                 break
-            if iteration_1((6, 9),(3, 4), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 3), random_numbers) == False:
+            if iteration_1((6, 9), (3, 4), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 3), random_numbers) == False:
                 break
             else:
                 sudoku.append(random_numbers)
                 break
 
         while len(sudoku) == 5:
-            if iteration_1((0, 3),(3, 5), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 3), random_numbers) == False:
+            if iteration_1((0, 3), (3, 5), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 3), random_numbers) == False:
+                print("line1")
                 break
-            if iteration_1((3, 6),(3, 5), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 3), random_numbers) == False:
+            if iteration_1((3, 6), (3, 5), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 3), random_numbers) == False:
                 break
-            if iteration_1((6, 9),(3, 5), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 3), random_numbers) == False:
+            if iteration_1((6, 9), (3, 5), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 3), random_numbers) == False:
                 break
             else:
                 sudoku.append(random_numbers)
@@ -138,27 +149,42 @@ def callback_new_game_generate():
                 break
 
         while len(sudoku) == 7:
-            if iteration_1((0, 3),(6, 7), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 6), random_numbers) == False:
+            if iteration_1((0, 3), (6, 7), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 6), random_numbers) == False:
                 break
-            if iteration_1((3, 6),(6, 7), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 6), random_numbers) == False:
+            if iteration_1((3, 6), (6, 7), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 6), random_numbers) == False:
                 break
-            if iteration_1((6, 9),(6, 7), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 6), random_numbers) == False:
+            if iteration_1((6, 9), (6, 7), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 6), random_numbers) == False:
                 break
             else:
                 sudoku.append(random_numbers)
                 break
 
         while len(sudoku) == 8:
-            if iteration_1((0, 3),(6, 8), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 6), random_numbers) == False:
+            if iteration_1((0, 3), (6, 8), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 6), random_numbers) == False:
                 break
-            if iteration_1((3, 6),(6, 8), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 6), random_numbers) == False:
+            if iteration_1((3, 6), (6, 8), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 6), random_numbers) == False:
                 break
-            if iteration_1((6, 9),(6, 8), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 6), random_numbers) == False:
+            if iteration_1((6, 9), (6, 8), (6, 9), random_numbers) == False or iteration_2((6, 9), (0, 6), random_numbers) == False:
                 break
             else:
                 sudoku.append(random_numbers)
                 print("\n""\n", sudoku[0], "\n", sudoku[1], "\n", sudoku[2], "\n", sudoku[3], "\n", sudoku[4], "\n", sudoku[5], "\n", sudoku[6], "\n", sudoku[7], "\n", sudoku[8])
                 break
+
+    if start_creating_maps[0] == True:
+        new_map_open = open("valid_maps.txt", "a")
+        for i in range(0, 9):
+            new_map.append(sudoku[i])
+        new_map_open.write("\n")
+        new_map_open.write(f"{new_map}")
+        new_map.clear()
+        new_map_open.close()
+        start_creating_maps.pop()
+        start_creating_maps.append(False)
+        sudoku.clear()
+        callback_start_creating_maps()
+        
+        
 
     dpg.configure_item("loading", show = False)
     dpg.configure_item("funny_text", show = False)
@@ -362,6 +388,8 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
 
     dpg.add_button(label = "Start generating map", callback = callback_new_game, tag = "generate_map")
     dpg.bind_item_theme(dpg.last_item(), "button_theme")
+
+    dpg.add_button(label = "Start creating maps", callback = callback_start_creating_maps)
 
     dpg.add_loading_indicator(label = "Creating new map", color = col.retro_red, secondary_color = col.retro_red, show = False, tag = "loading")
     dpg.add_text(rd.choice(text.text_snippets), show = False, tag = "funny_text")
