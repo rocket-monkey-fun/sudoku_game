@@ -5,6 +5,11 @@ import text
 import time
 import threading
 import colors as col
+import linecache
+
+version = "0.0"
+
+version_popup_text = "Version 0.0: Easy mode implemented"
 
 pygame.init()
 start_generating_map_sound = pygame.mixer.Sound("resources/start_generating_map.wav")
@@ -12,15 +17,24 @@ correct = pygame.mixer.Sound("resources/correct.wav")
 incorrect = pygame.mixer.Sound("resources/incorrect.wav")
 win_game = pygame.mixer.Sound("resources/win_game.wav")
 
+start_generating_map_sound_exp = pygame.mixer.Sound("resources/start_generating_map_exp.wav")
+correct_exp = pygame.mixer.Sound("resources/correct_exp.wav")
+incorrect_exp = pygame.mixer.Sound("resources/incorrect_exp.wav")
+win_game_exp = pygame.mixer.Sound("resources/win_game_exp.wav")
+
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+list_difficulty = ["Easy", "Medium", "Evil"]
 stage = []
-sudoku = []
-easy_mode = []
 new_text = [True]
 timer_on = [True]
 number_of_mistakes = []
 start_creating_maps = [False]
 new_map = []
+sudoku = []
+flat_sudoku = []
+flat_sudoku_temp = []
+hidden_sudoku = []
+hidden_values_temp = []
 
 def iteration_1(range_i, range_j, range_k, random_numbers):
     for i in range(range_i[0], range_i[1]):
@@ -48,31 +62,65 @@ def iteration_2(range_i, range_j, random_numbers):
 def callback_start_creating_maps():
     start_creating_maps.pop()
     start_creating_maps.append(True)
+    callback_start_generating_maps()
 
-    callback_new_game_generate()
+def callback_stop_creating_maps():
+    test = 5
 
-def callback_new_game(sender, app_data):
+def callback_start_generating_map(sender, app_data):
     sound = get_value_sound()
+    if sound == "On":
+        start_generating_map_sound.play()
+    if sound == "Explicit":
+        start_generating_map_sound_exp.play()
 
     dpg.configure_item("loading", show = True)
     dpg.configure_item("funny_text", show = True)
     dpg.configure_item("minion", show = True)
 
-    if sound == "On":
-        start_generating_map_sound.play()
+    dpg.configure_item("difficulty", enabled = False )
+    dpg.configure_item("game_mode_select", enabled = False)
+    dpg.configure_item("sound", enabled = False)
 
     sudoku.clear()
 
-
-
     thread1.daemon = True
     thread1.start()
-    thread2.daemon = True
-    thread2.start()
-    thread3.daemon = True
-    thread3.start()
 
-def callback_new_game_generate():
+def load_valid_map():
+    new_map_load = open("valid_maps.txt")
+    count = sum(1 for _ in new_map_load)
+    line = rd.randint(1, count)
+    selected_line = linecache.getline("valid_maps.txt", line)
+
+    selected_line = selected_line.replace("[", "")
+    selected_line = selected_line.replace("]", "")
+    selected_line = selected_line.replace(",", "")
+    selected_line = selected_line.replace(" ", "")
+    selected_line = selected_line.replace("\n", "")
+
+    for i in selected_line:
+        flat_sudoku_temp.append(int(i))
+        flat_sudoku.append(int(i))
+
+    for i in range(0, 9):
+        sudoku.append([])
+        for j in range(0, 9):
+            sudoku[i].append(flat_sudoku_temp[0])
+            flat_sudoku_temp.pop(0)
+
+    time.sleep(5)
+
+    dpg.configure_item("loading", show = False)
+    dpg.configure_item("funny_text", show = False)
+    dpg.configure_item("minion", show = False)
+    dpg.configure_item("generate_map", show = False)
+    dpg.configure_item("start_game", show = True)
+    
+    create_board()
+
+
+def callback_start_generating_maps():
     random_numbers_first_row = rd.sample(numbers, k = 9)
     sudoku.append(random_numbers_first_row)
 
@@ -127,7 +175,6 @@ def callback_new_game_generate():
 
         while len(sudoku) == 5:
             if iteration_1((0, 3), (3, 5), (0, 3), random_numbers) == False or iteration_2((0, 3), (0, 3), random_numbers) == False:
-                print("line1")
                 break
             if iteration_1((3, 6), (3, 5), (3, 6), random_numbers) == False or iteration_2((3, 6), (0, 3), random_numbers) == False:
                 break
@@ -184,40 +231,6 @@ def callback_new_game_generate():
         sudoku.clear()
         callback_start_creating_maps()
         
-        
-
-    dpg.configure_item("loading", show = False)
-    dpg.configure_item("funny_text", show = False)
-    dpg.configure_item("minion", show = False)
-    dpg.configure_item("funny_2", show = False)
-    dpg.configure_item("funny_3", show = False)
-    dpg.configure_item("funny_4", show = False)
-    dpg.configure_item("generate_map", show = False)
-    dpg.configure_item("start_game", show = True)
-    new_text.pop()
-    new_text.append(False)
-    create_easy_board()
-    
-def callback_change_funny_text():
-    while new_text[0] == True:
-        dpg.set_value("funny_text", rd.choice(text.text_snippets))
-        time.sleep(15)
-    print("close thread 2")
-    return
-
-def callback_change_funny_text_2():
-    time.sleep(30)
-    if new_text[0] == True:
-        dpg.configure_item("funny_2", show = True)
-    time.sleep(15)
-    if new_text[0] == True:
-        dpg.configure_item("funny_3", show = True)
-        time.sleep(15)
-    if new_text[0] == True:
-        dpg.configure_item("funny_4", show = True)
-    print("close thread 3")
-    return
-
 def callback_set_to_number(sender, app_data):
     sound = get_value_sound()
     row_column = "".join(number for number in sender if number.isdecimal())
@@ -229,25 +242,31 @@ def callback_set_to_number(sender, app_data):
 
     if app_data == f"image_{new_number}2":
         if old_number != new_number:
-            print ("fudge")
-            print(f"button_{row}_{column}")
-            print(new_number)
+            print(f"row_{row} column_{column}")
+            print(f"incorrect value: {new_number}")
+            print(f"correct value: {old_number}")
             dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{new_number}3")
             number_of_mistakes.append(0)
             dpg.set_value("mistakes", len(number_of_mistakes))
             if sound == "On":
                 incorrect.play()
+            if sound == "Explicit":
+                incorrect_exp.play()
             time.sleep(1.5)
             dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_blank")
             
         if old_number == new_number:
             dpg.configure_item(sender, texture_tag = app_data)
+            dpg.configure_item(sender, payload_type = "no_change")
             position = (((row - 1) * 9) + column) - 1
-            easy_mode.remove(position)
-            if sound == "On":
-                correct.play()
+            hidden_values_temp.remove(position)
+            if len(hidden_values_temp) != 0:
+                if sound == "On":
+                    correct.play()
+                if sound == "Explicit":
+                    correct_exp.play()
 
-            if len(easy_mode) == 0:
+            if len(hidden_values_temp) == 0:
                 print("win")
                 dpg.configure_item("finish_popup", show = True)
                 elapsed_time = dpg.get_value("timer")
@@ -257,11 +276,13 @@ def callback_set_to_number(sender, app_data):
                 timer_on.append(False)
                 if sound == "On":
                     win_game.play()
-        print(len(easy_mode))
+                if sound == "Explicit":
+                    win_game_exp.play()
+
+        print(f"remaining fields: {len(hidden_values_temp)}")
 
     if app_data == f"image_{new_number}4":
         dpg.configure_item(sender, texture_tag = app_data)
-
 
 def callback_start_game():
     sound = get_value_sound()
@@ -270,9 +291,12 @@ def callback_start_game():
     dpg.set_primary_window("game_screen", True)
     if sound == "On":
         start_generating_map_sound.stop()
+    if sound == "Explicit":
+        start_generating_map_sound_exp.stop()
+    
 
-    thread4.daemon = True
-    thread4.start()
+    thread2.daemon = True
+    thread2.start()
 
 def callback_start_timer():
     start_time = time.time()
@@ -290,33 +314,53 @@ def callback_start_timer():
     except: Exception
     return
 
-def create_easy_board():
-    easy_mode_values = rd.sample(range(0, 81), k = 43)
-    for i in range(0, 43):
-        easy_mode.append(easy_mode_values[i])
-    print(easy_mode)
-    flat_sudoku = sum(sudoku, [])
-    print(flat_sudoku)
-    for i in easy_mode: 
+def func_hidden_values():
+    difficulty = get_value_difficulty()
+
+    if difficulty == "Easy":
+        k = 43
+        hidden_values = rd.sample(range(0, 81), k)
+        for i in range(0, k):
+            hidden_values_temp.append(hidden_values[i])
+
+    if difficulty == "Medium":
+        k = 49
+        hidden_values = rd.sample(range(0, 81), k)
+        for i in range(0, k):
+            hidden_values_temp.append(hidden_values[i])
+
+    if difficulty == "Evil":
+        k = 56
+        hidden_values = rd.sample(range(0, 81), k)
+        for i in range(0, k):
+            hidden_values_temp.append(hidden_values[i])
+
+    return hidden_values
+
+def create_board():
+    hidden_values = func_hidden_values()
+
+    for i in hidden_values: 
         flat_sudoku.pop(i)
         flat_sudoku.insert(i, 0)
-    print("\n")
-
-    test = []
 
     for row in range(1, 10):
         for column in range(1, 10):
             number_value = 9 * (row - 1) + (column - 1)
-            test.append(flat_sudoku[number_value])
-            print(flat_sudoku[number_value])
+            hidden_sudoku.append(flat_sudoku[number_value])
             if flat_sudoku[number_value] > 0:
                 dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{flat_sudoku[number_value]}1", payload_type = "no_change")
-        print(test)
-        test.clear()
+        print(hidden_sudoku)
+        hidden_sudoku.clear()
 
 def get_value_sound():
     sound = dpg.get_value("sound")
     return sound    
+
+def get_value_difficulty():
+    difficulty = dpg.get_value("difficulty")
+    return difficulty
+
 
 def load_image_resource(image_number, image_type):
     width, height, channels, data = dpg.load_image(f"resources/image_{image_number}{image_type}.png")
@@ -325,10 +369,8 @@ def load_image_resource(image_number, image_type):
 def add_static_texture(image_number, image_type):
     dpg.add_static_texture(width = image_width[image_number - 1][image_type - 1], height = image_height[image_number - 1][image_type - 1], default_value = image_data[image_number - 1][image_type - 1], tag = f"image_{image_number}{image_type}")
 
-thread1 = threading.Thread(target = callback_new_game_generate)
-thread2 = threading.Thread(target = callback_change_funny_text)
-thread3 = threading.Thread(target = callback_change_funny_text_2)
-thread4 = threading.Thread(target = callback_start_timer)
+thread1 = threading.Thread(target = load_valid_map)
+thread2 = threading.Thread(target = callback_start_timer)
 
 image_width = []
 image_height = []
@@ -366,8 +408,20 @@ with dpg.texture_registry():
 dpg.create_viewport(title = 'Sudoku', width = 600, height = 600, small_icon = "resources/icon.ico", large_icon = "resources/icon.ico", resizable = False)
 
 with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_screen"):
+    with dpg.menu_bar():
+        with dpg.menu(label = "Map creation", show = False):
+            dpg.add_button(label = "Start creating maps", callback = callback_start_creating_maps)
+            dpg.add_button(label = "Stop creating maps", callback = callback_stop_creating_maps)
+        
+        with dpg.menu(label = "About"):
+            dpg.add_text("Developed by Rocket Monkey")
+            dpg.add_text(f"Version {version}", tag = "version_popup")
+
+            with dpg.popup(parent = "version_popup", mousebutton = dpg.mvMouseButton_Left):
+                dpg.add_text("test")
+                
     with dpg.tree_node(label = "Difficulty:", default_open = True, bullet = True, leaf = True):
-        dpg.add_radio_button(("Easy", "Medium", "Evil"), horizontal = True, default_value = "Easy")
+        dpg.add_radio_button(list_difficulty, horizontal = True, default_value = "Easy", tag = "difficulty")
 
     with dpg.tree_node(label = "Game mode:", default_open = True, bullet = True, leaf = True):
         dpg.add_radio_button(("Check continuously", "Check on finish"), horizontal = True, default_value = "Check continuously", tag = "game_mode_select")
@@ -376,7 +430,7 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
             dpg.add_text(text.gamemode_finish, bullet = True)
 
     with dpg.tree_node(label = "Sound:", default_open = True, bullet = True, leaf = True):
-        dpg.add_radio_button(("On", "Off"), horizontal = True, default_value = "On", tag = "sound")
+        dpg.add_radio_button(("On", "Off", "Explicit"), horizontal = True, default_value = "On", tag = "sound")
 
     with dpg.theme(tag = "button_theme"):
         with dpg.theme_component(dpg.mvButton):
@@ -386,17 +440,12 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
             dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 40)
             dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 40, 20)
 
-    dpg.add_button(label = "Start generating map", callback = callback_new_game, tag = "generate_map")
+    dpg.add_button(label = "Start generating map", callback = callback_start_generating_map, tag = "generate_map")
     dpg.bind_item_theme(dpg.last_item(), "button_theme")
-
-    dpg.add_button(label = "Start creating maps", callback = callback_start_creating_maps)
 
     dpg.add_loading_indicator(label = "Creating new map", color = col.retro_red, secondary_color = col.retro_red, show = False, tag = "loading")
     dpg.add_text(rd.choice(text.text_snippets), show = False, tag = "funny_text")
     dpg.add_text("Please be patient, the minions are working slow today...", show = False, tag = "minion")
-    dpg.add_text("Like really slow...", show = False, tag = "funny_2")
-    dpg.add_text("Like really, really slow...", show = False, tag = "funny_3")
-    dpg.add_text("Like really, really, really slow...", show = False, tag = "funny_4")
 
     dpg.add_button(label = "     Start game     ", callback = callback_start_game, show = False, tag = "start_game")
     dpg.bind_item_theme(dpg.last_item(), "button_theme")
@@ -444,16 +493,13 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     with dpg.tree_node(label = "Mistakes:", default_open = True, bullet = True, leaf = True):
         dpg.add_text("0", tag = "mistakes")
 
-    with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, tag = "finish_popup"):
+    with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, pos = (100, 100), tag = "finish_popup"):
         dpg.add_text("Congratulations, here are your stats:")
         dpg.add_separator()
         dpg.add_text("Your time is:", tag = "stat_time")
         dpg.add_text(f"Number of mistakes: 0", tag = "stat_mistakes")
         with dpg.group(horizontal=True):
             dpg.add_button(label = "OK", width = 75, callback = lambda: dpg.configure_item("finish_popup", show = False))
-
-
-
 
 dpg.setup_dearpygui()
 dpg.show_viewport()

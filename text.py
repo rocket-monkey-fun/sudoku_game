@@ -38,4 +38,6 @@ gamemode_continuous = "Check continuously: In this mode each move is checked aft
 
 gamemode_finish = "Check on finish: In this mode the result is shown after the last move is done."
 
-instructions_gamemode_continuous = "- The green numbers serve as pen marks and are checked.\n- If the value is correct, you can continue.\n- If it turns red, you have entered an incorrect value.\n- The brown numbers serve as pencil marks and are not checked.\n- Have fun!"
+instructions_gamemode_continuous = "- The green numbers serve as pen marks and are checked.\n- The brown numbers serve as pencil marks and are not checked.\n- If the value is correct it turns green and you can continue.\n- If the value is incorrect it turns red and it dissapears.\n- Have fun!"
+
+instructions_gamemode_on_finish = "- The green numbers serve as pen marks.\n- The brown numbers serve as pencil marks.\n-If you are done click the FINISH button.\n- Only the green numbers will be evaluated."
