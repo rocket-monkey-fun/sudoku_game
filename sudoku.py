@@ -36,7 +36,10 @@ sudoku = []
 flat_sudoku = []
 flat_sudoku_temp = []
 hidden_sudoku = []
+sudoku_current = []
 hidden_values_temp = []
+list_correct = []
+list_incorrect = []
 
 def iteration_1(range_i, range_j, range_k, random_numbers):
     for i in range(range_i[0], range_i[1]):
@@ -111,7 +114,7 @@ def load_valid_map():
             sudoku[i].append(flat_sudoku_temp[0])
             flat_sudoku_temp.pop(0)
 
-    time.sleep(5)
+    time.sleep(3.5)
 
     dpg.configure_item("loading", show = False)
     dpg.configure_item("funny_text", show = False)
@@ -239,28 +242,36 @@ def func_gamemode_selector(sender, app_data):
     row_column = "".join(number for number in sender if number.isdecimal())
     row = int(row_column[0])
     column = int(row_column[1])
-    if app_data != "image_blank":
+    current_number = sudoku_current[row - 1][column - 1]
+
+    if app_data != "image_blank": # pen or pencil mark was used
         new_number_image_type = "".join(number for number in app_data if number.isdecimal())
         new_number = int(new_number_image_type[0])
         old_number = sudoku[row - 1][column - 1]
 
-        if app_data == f"image_{new_number}2" and gamemode == list_gamemode[0]:
-            if old_number != new_number:
+        if app_data == f"image_{new_number}2": # pen mark was used
+            if old_number != new_number: # incorrect value is played
                 print(f"row: {row} column: {column}")
                 print(f"incorrect value: {new_number}")
                 print(f"correct value: {old_number}")
-                dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{new_number}3")
                 number_of_mistakes.append(0)
                 dpg.set_value("mistakes", len(number_of_mistakes))
-                if sound == "On":
-                    incorrect.play()
-                if sound == "Explicit":
-                    incorrect_exp.play()
-                time.sleep(1.5)
-                dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_blank")
-            
-            if old_number == new_number:
+                if gamemode == list_gamemode[0]:
+                    dpg.configure_item(sender, texture_tag = f"image_{new_number}3")
+                    if sound == "On":
+                        incorrect.play()
+                    if sound == "Explicit":
+                        incorrect_exp.play()
+                    time.sleep(1.5)
+                    dpg.configure_item(sender, texture_tag = f"image_blank")
+                if gamemode == list_gamemode[1]:
+                    dpg.configure_item(sender, texture_tag = app_data)
+                    list_incorrect.append(0)
+
+            if old_number == new_number and current_number != new_number: # correct value is played
                 dpg.configure_item(sender, texture_tag = app_data)
+                sudoku_current[row - 1].pop(column - 1)
+                sudoku_current[row - 1].insert(column - 1, new_number)
                 if gamemode == list_gamemode[0]:
                     dpg.configure_item(sender, payload_type = "no_change")
                 position = (((row - 1) * 9) + column) - 1
@@ -270,10 +281,13 @@ def func_gamemode_selector(sender, app_data):
                         correct.play()
                     if sound == "Explicit":
                         correct_exp.play()
+                if gamemode == list_gamemode[1]:
+                    list_correct.append(0)
 
                 if len(hidden_values_temp) == 0 and gamemode == list_gamemode[0]:
                     print("win")
                     dpg.configure_item("finish_popup", show = True)
+                    dpg.configure_item("stat_mistakes", show = True)
                     elapsed_time = dpg.get_value("timer")
                     dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
                     dpg.set_value("stat_mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
@@ -284,24 +298,31 @@ def func_gamemode_selector(sender, app_data):
                     if sound == "Explicit":
                         win_game_exp.play()
 
-            print(f"remaining fields: {len(hidden_values_temp)}")
-
-        if app_data == f"image_{new_number}4":
+        if app_data == f"image_{new_number}4": # pencil mark was used
             if sound == "Explicit":
                 pencil_exp.play()
             dpg.configure_item(sender, texture_tag = app_data)
     
-    if app_data == "image_blank":
+    if app_data == "image_blank": # reset mark was used
         dpg.configure_item(sender, texture_tag = app_data)
+        if gamemode == list_gamemode[1]:
+            if current_number != 0:
+                position = (((row - 1) * 9) + column) - 1
+                hidden_values_temp.append(position)
 
-def func_gamemode_finish(sender, app_data):
-    test = 7
+    print(f"remaining fields: {len(hidden_values_temp)}")
 
 def callback_start_game():
+    gamemode = get_value_gamemode()
     sound = get_value_sound()
     dpg.configure_item("welcome_screen", show = False)
     dpg.configure_item("game_screen", show = True)
     dpg.set_primary_window("game_screen", True)
+
+    if gamemode == list_gamemode[1]:
+        dpg.configure_item("evaluate_button", show = True)
+        dpg.configure_item("mistakes_tree", show = False)
+
     if sound == "On":
         start_generating_map_sound.stop()
     if sound == "Explicit":
@@ -357,13 +378,30 @@ def create_board():
         flat_sudoku.insert(i, 0)
 
     for row in range(1, 10):
+        sudoku_current.append([])
         for column in range(1, 10):
             number_value = 9 * (row - 1) + (column - 1)
             hidden_sudoku.append(flat_sudoku[number_value])
+            sudoku_current[row - 1].append(flat_sudoku[number_value])
             if flat_sudoku[number_value] > 0:
                 dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{flat_sudoku[number_value]}1", payload_type = "no_change")
         print(hidden_sudoku)
         hidden_sudoku.clear()
+
+def callback_evaluate():
+    timer_on.pop()
+    timer_on.append(False)
+    elapsed_time = dpg.get_value("timer")
+
+    dpg.configure_item("finish_popup", show = True)
+    dpg.configure_item("stat_incomplete", show = True)
+    dpg.configure_item("stat_correct", show = True)
+    dpg.configure_item("stat_incorrect", show = True)
+
+    dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
+    dpg.set_value("stat_incomplete", f"Incomplete fields: {elapsed_time}")
+    dpg.set_value("stat_correct", f"Correct fields: {len(list_correct)}")
+    dpg.set_value("stat_incorrect", f"Incorrect fields: {elapsed_time}")
 
 def get_value_sound():
     sound = dpg.get_value("sound")
@@ -508,14 +546,20 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     with dpg.tree_node(label = "Time:", default_open = True, bullet = True, leaf = True):
         dpg.add_text("0", tag = "timer")
 
-    with dpg.tree_node(label = "Mistakes:", default_open = True, bullet = True, leaf = True):
+    with dpg.tree_node(label = "Mistakes:", default_open = True, bullet = True, leaf = True, tag = "mistakes_tree"):
         dpg.add_text("0", tag = "mistakes")
+
+    dpg.add_button(label = "Evaluate!", callback = callback_evaluate, show = False, tag = "evaluate_button")
+    dpg.bind_item_theme(dpg.last_item(), "button_theme")
 
     with dpg.window(label = "Finish", modal = True, show = False, no_title_bar = True, pos = (100, 100), tag = "finish_popup"):
         dpg.add_text("Congratulations, here are your stats:")
         dpg.add_separator()
         dpg.add_text("Your time is:", tag = "stat_time")
-        dpg.add_text(f"Number of mistakes: 0", tag = "stat_mistakes")
+        dpg.add_text("Number of mistakes:", show = False, tag = "stat_mistakes")
+        dpg.add_text("Incomplete fields:", show = False, tag = "stat_incomplete")
+        dpg.add_text("Correct fields:", show = False, tag = "stat_correct")
+        dpg.add_text("Incorrect fields", show = False, tag = "stat_incorrect")
         with dpg.group(horizontal=True):
             dpg.add_button(label = "OK", width = 75, callback = lambda: dpg.configure_item("finish_popup", show = False))
 
