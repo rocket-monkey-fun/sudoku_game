@@ -1,0 +1,27 @@
+Continuous mode:
+    - play correct pen value
+    - play incorrect pen value
+    - play pencil value
+    - replace pencil value with correct pen value
+    - replace pencil value with incorrect pen value
+    - delete pencil value
+    - delete empty value
+
+On finish mode:
+    - pen:
+        - play correct value
+        - replace correct value with incorrect value
+        - replace correct value with correct value
+        - play incorrect value
+        - replace incorrect value with correct value
+        - replace incorrect value with incorrect value
+        - delete correct value
+        - delete incorrect value
+    
+    - pencil:
+        - play value
+        - delete value
+
+    - empty:
+        - delete empty value
+
