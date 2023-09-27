@@ -10,7 +10,8 @@ import sudoku_map
 
 version = "1.0"
 
-version_popup_text = f"Version 1.0: First release."
+version_popup_text = ("Version 1.0: First release.\n"
+                      )
 
 pygame.init()
 start_generating_map_sound = pygame.mixer.Sound("resources/start_generating_map.wav")
@@ -27,6 +28,7 @@ pencil_exp = pygame.mixer.Sound("resources/pencil_exp.wav")
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 list_difficulty = ["Easy", "Medium", "Evil"]
 list_gamemode = ["Check continuously", "Check on finish"]
+list_sound = ["On", "Off", "Explicit"]
 
 new_text = [True]
 timer_on = [True]
@@ -50,14 +52,25 @@ def callback_sudoku_map_stop_creating_maps_button():
     dpg.configure_item("stop_creating_maps_button", enabled = False)
     sudoku_map.func_stop_creating_maps_button()
 
-
-
-def callback_start_generating_map(sender, app_data):
+def play_sound(sound_type):
     sound = get_value_sound()
-    if sound == "On":
-        start_generating_map_sound.play()
-    if sound == "Explicit":
-        start_generating_map_sound_exp.play()
+
+    if sound_type == "start_generating_play":
+        if sound == list_sound[0]:
+            start_generating_map_sound.play()
+        if sound == list_sound[2]:
+            start_generating_map_sound_exp.play()
+
+    if sound_type == "start_generating_stop":
+        if sound == list_sound[0]:
+            start_generating_map_sound.stop()
+        if sound == list_sound[2]:
+            start_generating_map_sound_exp.stop()
+
+
+def callback_load_map(sender, app_data):
+    sound_type = "start_generating_play"
+    play_sound(sound_type)
 
     dpg.configure_item("loading", show = True)
     dpg.configure_item("funny_text", show = True)
@@ -72,8 +85,8 @@ def callback_start_generating_map(sender, app_data):
     load_valid_map()
 
 def load_valid_map():
-    new_map_load = open("valid_maps.txt")
-    count = sum(1 for _ in new_map_load)
+    load_new_map = open("valid_maps.txt")
+    count = sum(1 for _ in load_new_map)
     line = rd.randint(1, count)
     selected_line = linecache.getline("valid_maps.txt", line)
 
@@ -131,9 +144,9 @@ def func_gamemode_selector(sender, app_data):
                 dpg.set_value("mistakes", len(number_of_mistakes))
                 if gamemode == list_gamemode[0]:
                     dpg.configure_item(sender, texture_tag = f"image_{new_number}3")
-                    if sound == "On":
+                    if sound == list_sound[0]:
                         incorrect.play()
-                    if sound == "Explicit":
+                    if sound == list_sound[2]:
                         incorrect_exp.play()
                     time.sleep(1.5)
                     dpg.configure_item(sender, texture_tag = f"image_blank")
@@ -150,9 +163,9 @@ def func_gamemode_selector(sender, app_data):
                 position = (((row - 1) * 9) + column) - 1
                 hidden_values_temp.remove(position)
                 if len(hidden_values_temp) != 0 and gamemode == list_gamemode[0]:
-                    if sound == "On":
+                    if sound == list_sound[0]:
                         correct.play()
-                    if sound == "Explicit":
+                    if sound == list_sound[2]:
                         correct_exp.play()
                 if gamemode == list_gamemode[1]:
                     list_correct.append(0)
@@ -172,7 +185,7 @@ def func_gamemode_selector(sender, app_data):
                         win_game_exp.play()
 
         if app_data == f"image_{new_number}4": # pencil mark was used
-            if sound == "Explicit":
+            if sound == list_sound[2]:
                 pencil_exp.play()
             dpg.configure_item(sender, texture_tag = app_data)
     
@@ -186,8 +199,9 @@ def func_gamemode_selector(sender, app_data):
     print(f"remaining fields: {len(hidden_values_temp)}")
 
 def callback_start_game():
+    sound_type = "start_generating_stop"
     gamemode = get_value_gamemode()
-    sound = get_value_sound()
+
     dpg.configure_item("welcome_screen", show = False)
     dpg.configure_item("game_screen", show = True)
     dpg.set_primary_window("game_screen", True)
@@ -196,10 +210,7 @@ def callback_start_game():
         dpg.configure_item("evaluate_button", show = True)
         dpg.configure_item("mistakes_tree", show = False)
 
-    if sound == "On":
-        start_generating_map_sound.stop()
-    if sound == "Explicit":
-        start_generating_map_sound_exp.stop()
+    play_sound(sound_type)
     
     thread_1_game.daemon = True
     thread_1_game.start()
@@ -336,7 +347,7 @@ with dpg.texture_registry():
     dpg.add_static_texture(width = width_reset, height = height_reset, default_value = data_reset, tag = "image_reset")
     dpg.add_static_texture(width = width_logo, height = height_logo, default_value = data_logo, tag = "image_logo")
 
-dpg.create_viewport(title = 'Sudoku', width = 600, height = 600, small_icon = "resources/icon.ico", large_icon = "resources/icon.ico", resizable = False)
+dpg.create_viewport(title = 'Sudoku', width = 630, height = 630, small_icon = "resources/icon.ico", large_icon = "resources/icon.ico", resizable = False)
 
 with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_screen"):
     with dpg.menu_bar():
@@ -347,11 +358,11 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
         with dpg.menu(label = "About"):
             dpg.add_text("Developed by Rocket Monkey")
             dpg.add_image("image_logo", width = 100, height = 100)
-            dpg.add_text(f"Version {version}", tag = "version_popup")
 
-            with dpg.popup(parent = "version_popup", mousebutton = dpg.mvMouseButton_Left):
-                dpg.add_text("test")
-                
+            dpg.add_text(f"Version {version}", tag = "version_popup")
+            with dpg.tooltip(dpg.last_item()):
+                dpg.add_text(version_popup_text)
+
     with dpg.tree_node(label = "Difficulty:", default_open = True, bullet = True, leaf = True):
         dpg.add_radio_button(list_difficulty, horizontal = True, default_value = "Easy", tag = "difficulty")
 
@@ -362,7 +373,7 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
             dpg.add_text(text.gamemode_finish, bullet = True)
 
     with dpg.tree_node(label = "Sound:", default_open = True, bullet = True, leaf = True):
-        dpg.add_radio_button(("On", "Off", "Explicit"), horizontal = True, default_value = "On", tag = "sound")
+        dpg.add_radio_button(list_sound, horizontal = True, default_value = "On", tag = "sound")
 
     with dpg.theme(tag = "button_theme"):
         with dpg.theme_component(dpg.mvButton):
@@ -372,7 +383,7 @@ with dpg.window(label = "Welcome screen", pos = (100, 100), tag = "welcome_scree
             dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 40)
             dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 40, 20)
 
-    dpg.add_button(label = "Start generating map", callback = callback_start_generating_map, tag = "generate_map")
+    dpg.add_button(label = "Start generating map", callback = callback_load_map, tag = "generate_map")
     dpg.bind_item_theme(dpg.last_item(), "button_theme")
 
     dpg.add_loading_indicator(label = "Creating new map", color = col.retro_red, secondary_color = col.retro_red, show = False, tag = "loading")
