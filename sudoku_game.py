@@ -34,12 +34,13 @@ new_text = [True]
 timer_on = [True]
 number_of_mistakes = []
 
-sudoku = []
+full_sudoku = []
 flat_sudoku = []
 flat_sudoku_temp = []
 hidden_sudoku = []
-sudoku_current = []
+current_sudoku = []
 hidden_values_temp = []
+list_empty = []
 list_correct = []
 list_incorrect = []
 
@@ -67,7 +68,6 @@ def play_sound(sound_type):
         if sound == list_sound[2]:
             start_generating_map_sound_exp.stop()
 
-
 def callback_load_map(sender, app_data):
     sound_type = "start_generating_play"
     play_sound(sound_type)
@@ -80,7 +80,7 @@ def callback_load_map(sender, app_data):
     dpg.configure_item("gamemode_select", enabled = False)
     dpg.configure_item("sound", enabled = False)
 
-    sudoku.clear()
+    full_sudoku.clear()
 
     load_valid_map()
 
@@ -101,9 +101,9 @@ def load_valid_map():
         flat_sudoku.append(int(i))
 
     for i in range(0, 9):
-        sudoku.append([])
+        full_sudoku.append([])
         for j in range(0, 9):
-            sudoku[i].append(flat_sudoku_temp[0])
+            full_sudoku[i].append(flat_sudoku_temp[0])
             flat_sudoku_temp.pop(0)
 
     time.sleep(3.5)
@@ -116,87 +116,137 @@ def load_valid_map():
     
     create_board()
 
-def func_gamemode_selector(sender, app_data):
+def play_current_value(position): #parse column, row and current value from position
+    row_column = "".join(number for number in position if number.isdecimal())
+    row = int(row_column[0])
+    column = int(row_column[1])
+    current_value = current_sudoku[row - 1][column - 1]
+    return row, column, current_value
+
+def play_played_value(played_button):
+    if played_button == "image_blank":
+        played_value = 0
+        played_value_type = 0
+    else:
+        played_button_type = "".join(number for number in played_button if number.isdecimal())
+        played_value = int(played_button_type[0])
+        played_value_type = int(played_button_type[1])
+    return played_value, played_value_type
+
+def play_pen_mark(played_value, correct_value, position, played_button, row, column):
+    gamemode = get_value_gamemode()
+
+    if gamemode == list_gamemode[0]:
+        play_pen_mark_continuous(played_value, correct_value, position, played_button, row, column)
+    if gamemode == list_gamemode[1]:
+        play_pen_mark_finish(played_value, position, played_button)
+
+def play_pen_mark_continuous(played_value, correct_value, position, played_button, row, column):
+    if played_value == correct_value:
+        play_pen_mark_continuous_correct(played_value, position, played_button, row, column)
+    if played_value != correct_value:
+        play_pen_mark_continuous_incorrect(played_value, position)
+    print(f"remaining fields: {len(hidden_values_temp)}")
+
+def play_pen_mark_continuous_correct(played_value, position, played_button, row, column):
+    sound = get_value_sound()
+
+    dpg.configure_item(position, texture_tag = played_button)
+    current_sudoku[row - 1].pop(column - 1)
+    current_sudoku[row - 1].insert(column - 1, played_value)
+    dpg.configure_item(position, payload_type = "no_change")
+    hidden_value_pos = (((row - 1) * 9) + column) - 1
+    hidden_values_temp.remove(hidden_value_pos)
+    if len(hidden_values_temp) != 0:
+        if sound == list_sound[0]:
+            correct.play()
+        if sound == list_sound[2]:
+            correct_exp.play()
+
+def play_pen_mark_continuous_incorrect(played_value, position):
+    sound = get_value_sound()
+
+    number_of_mistakes.append(0)
+    dpg.set_value("mistakes", len(number_of_mistakes))
+    dpg.configure_item(position, texture_tag = f"image_{played_value}3")
+    if sound == list_sound[0]:
+        incorrect.play()
+    if sound == list_sound[2]:
+        incorrect_exp.play()
+    time.sleep(1.5)
+    dpg.configure_item(position, texture_tag = f"image_blank")
+
+def play_pen_mark_finish(played_value, position, played_button):
+    dpg.configure_item(position, texture_tag = played_button, user_data = f"image_{played_value}")
+
+def play_pencil_mark(played_value, position, played_button):
     gamemode = get_value_gamemode()
     sound = get_value_sound()
 
-    row_column = "".join(number for number in sender if number.isdecimal())
-    row = int(row_column[0])
-    column = int(row_column[1])
+    dpg.configure_item(position, texture_tag = played_button)
 
-    current_number = sudoku_current[row - 1][column - 1]
+    if gamemode == list_gamemode[0]:
+        if sound == list_sound[2]:
+            pencil_exp.play()
 
-    if app_data != "image_blank":
-        new_number_image_type = "".join(number for number in app_data if number.isdecimal())
-        new_number = int(new_number_image_type[0])
+    if gamemode == list_gamemode[1]:
+        dpg.configure_item(position, user_data = played_value)
 
-    old_number = sudoku[row - 1][column - 1]
+def play_reset_mark(position, played_button):
+    dpg.configure_item(position, texture_tag = played_button)
 
-    if app_data != "image_blank": # pen or pencil mark was used
-        if app_data == f"image_{new_number}2": # pen mark was used
-            if old_number != new_number: # incorrect value is played
-                print(f"row: {row} column: {column}")
-                print(f"incorrect value: {new_number}")
-                print(f"correct value: {old_number}")
-                sudoku_current[row - 1].pop(column - 1)
-                sudoku_current[row - 1].insert(column - 1, 0)
-                number_of_mistakes.append(0)
-                dpg.set_value("mistakes", len(number_of_mistakes))
-                if gamemode == list_gamemode[0]:
-                    dpg.configure_item(sender, texture_tag = f"image_{new_number}3")
-                    if sound == list_sound[0]:
-                        incorrect.play()
-                    if sound == list_sound[2]:
-                        incorrect_exp.play()
-                    time.sleep(1.5)
-                    dpg.configure_item(sender, texture_tag = f"image_blank")
-                if gamemode == list_gamemode[1]:
-                    dpg.configure_item(sender, texture_tag = app_data)
+def game_end_continuous():
+    sound = get_value_sound()
+
+    print("end")
+    dpg.configure_item("finish_popup", show = True)
+    dpg.configure_item("stat_mistakes", show = True)
+    elapsed_time = dpg.get_value("timer")
+    dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
+    dpg.set_value("stat_mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
+    timer_on.pop()
+    timer_on.append(False)
+    if sound == "On":
+        win_game.play()
+    if sound == "Explicit":
+        win_game_exp.play()
+
+def game_end_finish():
+    for row in range(1, 10):
+        for column in range(1, 10):
+            button = dpg.get_item_configuration(f"button_{row}_{column}")
+            if button.get("user_data") == "image_blank":
+                list_empty.append(0)
+            if button.get("user_data") == f"image_{full_sudoku[row - 1][column - 1]}":
+                list_correct.append(0)
+            if button.get("user_data") != f"image_{full_sudoku[row - 1][column - 1]}":
+                if button.get("user_data") != "image_blank":
                     list_incorrect.append(0)
+                if button.get("user_data") == "image_blank":
+                    return
 
-            if old_number == new_number and current_number != new_number: # correct value is played
-                dpg.configure_item(sender, texture_tag = app_data)
-                sudoku_current[row - 1].pop(column - 1)
-                sudoku_current[row - 1].insert(column - 1, new_number)
-                if gamemode == list_gamemode[0]:
-                    dpg.configure_item(sender, payload_type = "no_change")
-                position = (((row - 1) * 9) + column) - 1
-                hidden_values_temp.remove(position)
-                if len(hidden_values_temp) != 0 and gamemode == list_gamemode[0]:
-                    if sound == list_sound[0]:
-                        correct.play()
-                    if sound == list_sound[2]:
-                        correct_exp.play()
-                if gamemode == list_gamemode[1]:
-                    list_correct.append(0)
 
-                if len(hidden_values_temp) == 0 and gamemode == list_gamemode[0]:
-                    print("win")
-                    dpg.configure_item("finish_popup", show = True)
-                    dpg.configure_item("stat_mistakes", show = True)
-                    elapsed_time = dpg.get_value("timer")
-                    dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
-                    dpg.set_value("stat_mistakes", f"Number of mistakes: {len(number_of_mistakes)}")
-                    timer_on.pop()
-                    timer_on.append(False)
-                    if sound == "On":
-                        win_game.play()
-                    if sound == "Explicit":
-                        win_game_exp.play()
+def func_gamemode_selector(sender, app_data): 
+    position = sender
+    played_button = app_data
+    row, column, current_value = play_current_value(position)
+    played_value, played_value_type = play_played_value(played_button)
+    correct_value = full_sudoku[row - 1][column - 1]
 
-        if app_data == f"image_{new_number}4": # pencil mark was used
-            if sound == list_sound[2]:
-                pencil_exp.play()
-            dpg.configure_item(sender, texture_tag = app_data)
-    
-    if app_data == "image_blank": # reset mark was used
-        dpg.configure_item(sender, texture_tag = app_data)
-        if gamemode == list_gamemode[1]:
-            if current_number != 0:
-                position = (((row - 1) * 9) + column) - 1
-                hidden_values_temp.append(position)
+    print(f"row: {row}, column: {column}, current_value: {current_value}")
+    print(f"played value: {played_value}, correct value: {correct_value}")
 
-    print(f"remaining fields: {len(hidden_values_temp)}")
+    if played_value_type == 2:
+        play_pen_mark(played_value, correct_value, position, played_button, row, column)
+
+    if played_value_type == 4:
+        play_pencil_mark(played_value, position, played_button)
+
+    if played_value_type == 0:
+        play_reset_mark(position, played_button)
+
+    if len(hidden_values_temp) == 0:
+        game_end_continuous()        
 
 def callback_start_game():
     sound_type = "start_generating_stop"
@@ -262,30 +312,33 @@ def create_board():
         flat_sudoku.insert(i, 0)
 
     for row in range(1, 10):
-        sudoku_current.append([])
+        current_sudoku.append([])
         for column in range(1, 10):
             number_value = 9 * (row - 1) + (column - 1)
             hidden_sudoku.append(flat_sudoku[number_value])
-            sudoku_current[row - 1].append(flat_sudoku[number_value])
+            current_sudoku[row - 1].append(flat_sudoku[number_value])
             if flat_sudoku[number_value] > 0:
-                dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{flat_sudoku[number_value]}1", payload_type = "no_change")
+                dpg.configure_item(f"button_{row}_{column}", texture_tag = f"image_{flat_sudoku[number_value]}1", payload_type = "no_change", user_data = "N/A")
         print(hidden_sudoku)
         hidden_sudoku.clear()
 
 def callback_evaluate():
+    elapsed_time = get_value_elapsed_time()
+
     timer_on.pop()
     timer_on.append(False)
-    elapsed_time = dpg.get_value("timer")
-
+    
     dpg.configure_item("finish_popup", show = True)
     dpg.configure_item("stat_incomplete", show = True)
     dpg.configure_item("stat_correct", show = True)
     dpg.configure_item("stat_incorrect", show = True)
 
+    game_end_finish()
+
     dpg.set_value("stat_time", f"Your time is: {elapsed_time}")
-    dpg.set_value("stat_incomplete", f"Incomplete fields: {elapsed_time}")
+    dpg.set_value("stat_incomplete", f"Incomplete fields: {len(list_empty)}")
     dpg.set_value("stat_correct", f"Correct fields: {len(list_correct)}")
-    dpg.set_value("stat_incorrect", f"Incorrect fields: {elapsed_time}")
+    dpg.set_value("stat_incorrect", f"Incorrect fields: {len(list_incorrect)}")
 
 def get_value_sound():
     sound = dpg.get_value("sound")
@@ -298,6 +351,10 @@ def get_value_difficulty():
 def get_value_gamemode():
     gamemode = dpg.get_value("gamemode_select")
     return gamemode
+
+def get_value_elapsed_time():
+    elapsed_time = dpg.get_value("timer")
+    return elapsed_time
 
 def load_image_resource(image_number, image_type):
     width, height, channels, data = dpg.load_image(f"resources/image_{image_number}{image_type}.png")
@@ -397,7 +454,7 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
     for row in range(1, 10):
         with dpg.group(horizontal = True):
             for column in range(1, 10):
-                dpg.add_image_button("image_blank", width = 30, height = 30, drop_callback = func_gamemode_selector, payload_type = "strings", tag = f"button_{row}_{column}")
+                dpg.add_image_button("image_blank", width = 30, height = 30, drop_callback = func_gamemode_selector, payload_type = "strings", user_data = "image_blank", tag = f"button_{row}_{column}")
  
                 if row > 0 and column == 9:
                     dpg.add_image_button(f"image_{row}2", width = 30, height = 30, indent = 450)
