@@ -7,6 +7,7 @@ import threading
 import colors as col
 import linecache
 import sudoku_map
+import os
 
 version = "1.0"
 
@@ -190,10 +191,10 @@ def play_pencil_mark(played_value, position, played_button):
             pencil_exp.play()
 
     if gamemode == list_gamemode[1]:
-        dpg.configure_item(position, user_data = played_value)
+        dpg.configure_item(position, user_data = f"image_{played_value}")
 
 def play_reset_mark(position, played_button):
-    dpg.configure_item(position, texture_tag = played_button)
+    dpg.configure_item(position, texture_tag = played_button, user_data = "image_blank")
 
 def game_end_continuous():
     sound = get_value_sound()
@@ -215,16 +216,13 @@ def game_end_finish():
     for row in range(1, 10):
         for column in range(1, 10):
             button = dpg.get_item_configuration(f"button_{row}_{column}")
+            print(button.get("user_data"))
             if button.get("user_data") == "image_blank":
                 list_empty.append(0)
             if button.get("user_data") == f"image_{full_sudoku[row - 1][column - 1]}":
                 list_correct.append(0)
-            if button.get("user_data") != f"image_{full_sudoku[row - 1][column - 1]}":
-                if button.get("user_data") != "image_blank":
-                    list_incorrect.append(0)
-                if button.get("user_data") == "image_blank":
-                    return
-
+            if button.get("user_data") != f"image_{full_sudoku[row - 1][column - 1]}" and button.get("user_data") != "image_blank" and button.get("user_data") != "N/A":
+                list_incorrect.append(0)
 
 def func_gamemode_selector(sender, app_data): 
     position = sender
@@ -339,6 +337,15 @@ def callback_evaluate():
     dpg.set_value("stat_incomplete", f"Incomplete fields: {len(list_empty)}")
     dpg.set_value("stat_correct", f"Correct fields: {len(list_correct)}")
     dpg.set_value("stat_incorrect", f"Incorrect fields: {len(list_incorrect)}")
+
+def callback_game_finished():
+    dpg.configure_item("finish_popup", show = False)
+    dpg.configure_item("game_screen", show = False)
+    dpg.configure_item("end_screen", show = True)
+    dpg.set_primary_window("end_screen", True)
+
+def callback_the_end():
+    os._exit(0)
 
 def get_value_sound():
     sound = dpg.get_value("sound")
@@ -505,8 +512,13 @@ with dpg.window(label = "Game screen", pos = (100, 100), show = False, tag = "ga
         dpg.add_text("Correct fields:", show = False, tag = "stat_correct")
         dpg.add_text("Incorrect fields", show = False, tag = "stat_incorrect")
         with dpg.group(horizontal=True):
-            dpg.add_button(label = "OK", width = 75, callback = lambda: dpg.configure_item("finish_popup", show = False))
+            dpg.add_button(label = "OK", width = 75, callback =  callback_game_finished)
 
+with dpg.window(label = "End screen", pos = (100, 100), show = False, tag = "end_screen"):
+    dpg.add_text(text.congratulations)
+    dpg.add_button(label = "     The end!     ", callback = callback_the_end, tag = "the_end")
+    dpg.bind_item_theme(dpg.last_item(), "button_theme")
+    
 dpg.setup_dearpygui()
 dpg.show_viewport()
 dpg.set_primary_window("welcome_screen", True)

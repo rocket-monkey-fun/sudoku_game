@@ -41,3 +41,5 @@ gamemode_finish = "Check on finish: In this mode the result is shown after the l
 instructions_gamemode_continuous = "- The green numbers serve as pen marks and are checked.\n- The brown numbers serve as pencil marks and are not checked.\n- If the value is correct it turns green and you can continue.\n- If the value is incorrect it turns red and it dissapears.\n- Have fun!"
 
 instructions_gamemode_on_finish = "- The green numbers serve as pen marks.\n- The brown numbers serve as pencil marks.\n-If you are done click the FINISH button.\n- Only the green numbers will be evaluated."
+
+congratulations = "Congratulations!\n\nYou have succesfully (or not) finished the game.\n\nIf you have any ideas for what to do next, reach out to me.\n\n"
