@@ -88,8 +88,14 @@ def callback_load_map(sender, app_data):
 def load_valid_map():
     load_new_map = open("valid_maps.txt")
     count = sum(1 for _ in load_new_map)
-    line = rd.randint(1, count)
-    selected_line = linecache.getline("valid_maps.txt", line)
+    line_count = rd.randint(1, count)
+    #selected_line = linecache.getline("valid_maps.txt", line_count)
+
+    with open("valid_maps.txt") as fp:
+        for i, line in enumerate(fp):
+            if i == line_count:
+                print(line_count, line)
+                selected_line = line
 
     selected_line = selected_line.replace("[", "")
     selected_line = selected_line.replace("]", "")
